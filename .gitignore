@@ -1,0 +1,3 @@
+# Seguridad: No subir variables de entorno
+.env
+venv/
