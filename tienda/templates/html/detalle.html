@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ producto.nombre }}</title>
+</head>
+<body>
+    <a href="{% url 'admin:index' %}">Ir al Admin</a>
+    
+    <div class="producto-principal">
+        {% if producto.imagen %}
+            <img src="{{ producto.imagen.url }}" width="300">
+        {% endif %}
+        <h1>{{ producto.nombre }}</h1>
+        <p>Precio: ${{ producto.precio }}</p>
+        <p>{{ producto.descripcion }}</p>
+    </div>
+
+    <hr>
+
+    <h3>Recomendaciones de IA Gemini:</h3>
+    <div style="display: flex; gap: 20px;">
+        {% for rec in recomendaciones %}
+            <div style="border: 1px solid #ccc; padding: 10px; width: 200px;">
+                {% if rec.imagen %}
+                    <img src="{{ rec.imagen.url }}" width="100%">
+                {% endif %}
+                <h4>{{ rec.nombre }}</h4>
+                
+                <p style="font-size: 0.8em; color: blue;">
+                    {% for exp in explicaciones %}
+                        {% if exp.id == rec.id %}
+                            "{{ exp.razon }}"
+                        {% endif %}
+                    {% endfor %}
+                </p>
+                
+                <a href="/producto/{{ rec.id }}">Ver más</a>
+
+                <a href="{% url 'detalle_producto' rec.id %}">Ver más</a>   
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
