@@ -1,0 +1,206 @@
+{% extends 'html/base.html' %}
+{% load static %}
+
+{% block title %}VetShop — Todo para tu mascota{% endblock %}
+
+
+{% block content %}
+
+<!-- ═══════════════════ HERO + CARRUSEL ═══════════════════ -->
+<section class="hero" id="inicio">
+    <div class="hero-bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="carousel-wrapper">
+        <div class="carousel-track" id="carouselTrack">
+
+            <div class="slide active">
+                <div class="slide-content">
+                    <div class="slide-badge">✨ Nuevo</div>
+                    <h1>Lo mejor para<br><span class="highlight">tu perro</span></h1>
+                    <p>Alimentos premium, juguetes y accesorios pensados para el bienestar de tu mejor amigo.</p>
+                    <a href="#productos" class="btn-primary">Ver productos</a>
+                </div>
+                <div class="slide-visual">
+                    <div class="visual-circle" style="background: #FFD166;">
+                        <span class="slide-emoji">🐶</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <div class="slide-content">
+                    <div class="slide-badge">🐱 Especial</div>
+                    <h1>Tu gato se<br><span class="highlight green">merece todo</span></h1>
+                    <p>Snacks, arena, camas y mucho más. Porque ellos también son familia.</p>
+                    <a href="#productos" class="btn-primary green">Explorar</a>
+                </div>
+                <div class="slide-visual">
+                    <div class="visual-circle" style="background: #06D6A0;">
+                        <span class="slide-emoji">🐱</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide">
+                <div class="slide-content">
+                    <div class="slide-badge">🌿 Natural</div>
+                    <h1>Salud y<br><span class="highlight purple">bienestar animal</span></h1>
+                    <p>Productos veterinarios de calidad para mantener a tus mascotas sanas y felices.</p>
+                    <a href="#productos" class="btn-primary purple">Descubrir</a>
+                </div>
+                <div class="slide-visual">
+                    <div class="visual-circle" style="background: #A78BFA;">
+                        <span class="slide-emoji">🐾</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Controles -->
+        <button class="carousel-btn prev" id="prevBtn">&#8592;</button>
+        <button class="carousel-btn next" id="nextBtn">&#8594;</button>
+
+        <div class="carousel-dots" id="carouselDots">
+            <span class="dot active" data-index="0"></span>
+            <span class="dot" data-index="1"></span>
+            <span class="dot" data-index="2"></span>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ CATEGORÍAS RÁPIDAS ═══════════════════ -->
+<section class="categories">
+    <div class="container">
+        <div class="category-pills">
+            <a href="?especie=" class="pill {% if not especie_activa %}active{% endif %}">🐾 Todo</a>
+            <a href="?especie=perro" class="pill {% if especie_activa == 'perro' %}active{% endif %}">🐶 Perros</a>
+            <a href="?especie=gato"  class="pill {% if especie_activa == 'gato'  %}active{% endif %}">🐱 Gatos</a>
+            <a href="?especie=ave"   class="pill {% if especie_activa == 'ave'   %}active{% endif %}">🐦 Aves</a>
+            <a href="?especie=pez"   class="pill {% if especie_activa == 'pez'   %}active{% endif %}">🐠 Peces</a>
+
+
+            <a href="{% url 'catalogo' %}" class="btn-ver-todos">Ver todos nuestros productos →</a>
+
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ PRODUCTOS ═══════════════════ -->
+<section class="productos" id="productos">
+    <div class="container">
+        <div class="section-header">
+            <h2>Nuestros <span class="highlight">Productos</span></h2>
+            <p>Todo lo que tu mascota necesita en un solo lugar</p>
+        </div>
+
+        <div class="productos-grid" id="productosGrid">
+            <!-- Los productos se cargan dinámicamente desde Django -->
+            {% for producto in productos %}
+            <div class="producto-card" style="animation-delay: {{ forloop.counter0 }}00ms">
+                <div class="card-img-wrap">
+                    {% if producto.imagen %}
+                        <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" loading="lazy">
+                    {% else %}
+                        <div class="img-placeholder">🐾</div>
+                    {% endif %}
+                    <div class="card-badge">Nuevo</div>
+                </div>
+                <div class="card-body">
+                    <span class="card-category">{{ producto.categoria }}</span>
+                    <h3 class="card-title">{{ producto.nombre }}</h3>
+                    <p class="card-desc">{{ producto.descripcion|truncatewords:12 }}</p>
+                    <div class="card-footer">
+                        <span class="card-price">${{ producto.precio }}</span>
+                        <a href="{% url 'detalle_producto' producto.id %}" class="btn-card">Ver más →</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <!-- Placeholder si no hay productos aún -->
+            {% for i in "123456" %}
+            <div class="producto-card skeleton">
+                <div class="skeleton-img"></div>
+                <div class="skeleton-body">
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line medium"></div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endfor %}
+
+        </div>
+    </div>
+</section>
+
+
+
+<!-- ═══════════════════ BANNER PROMO ═══════════════════ -->
+<section class="promo-banner">
+    <div class="promo-content">
+        <div class="promo-text">
+            <h2>🚀 Envío gratis en compras sobre $30.000</h2>
+            <p>Lleva todo lo que necesitas sin preocuparte por el costo de envío</p>
+        </div>
+        <a href="#productos" class="btn-promo">Aprovechar ahora</a>
+    </div>
+</section>
+
+<!-- ═══════════════════ SOBRE NOSOTROS ═══════════════════ -->
+<section class="nosotros" id="nosotros">
+    <div class="container nosotros-grid">
+        <div class="nosotros-visual">
+            <div class="nosotros-blob">
+                <span class="nosotros-emoji">🏥</span>
+            </div>
+            <div class="stat-chip chip-1">
+                <strong>500+</strong>
+                <span>Productos</span>
+            </div>
+            <div class="stat-chip chip-2">
+                <strong>1200+</strong>
+                <span>Clientes felices</span>
+            </div>
+            <div class="stat-chip chip-3">
+                <strong>5★</strong>
+                <span>Calificación</span>
+            </div>
+        </div>
+        <div class="nosotros-text">
+            <div class="section-badge">💚 Nuestra historia</div>
+            <h2>Amamos a los<br><span class="highlight green">animales tanto<br>como tú</span></h2>
+            <p>Somos una tienda veterinaria comprometida con el bienestar de tus mascotas. Ofrecemos productos de la más alta calidad, seleccionados por veterinarios y especialistas en nutrición animal.</p>
+            <p>Desde alimentos premium hasta accesorios, todo en VetShop está pensado para que tu mascota viva su mejor vida.</p>
+            <div class="nosotros-features">
+                <div class="feature">
+                    <span class="feature-icon">✅</span>
+                    <span>Productos certificados</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🚚</span>
+                    <span>Envío rápido</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">💬</span>
+                    <span>Asesoría veterinaria</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🔒</span>
+                    <span>Compra segura</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/index.js' %}"></script>
+{% endblock %}

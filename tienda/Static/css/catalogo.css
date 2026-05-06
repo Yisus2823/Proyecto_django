@@ -1,0 +1,206 @@
+/* ═══════════════════════════════════════════
+   VetShop — catalogo.css
+═══════════════════════════════════════════ */
+
+/* ── Hero catálogo ── */
+.catalogo-hero {
+    position: relative;
+    padding: 120px 40px 60px;
+    background: linear-gradient(135deg, #fff9f0 0%, #f0fff8 100%);
+    overflow: hidden;
+    text-align: center;
+}
+.hero-breadcrumb {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 16px;
+}
+.hero-breadcrumb a { color: var(--text-light); transition: color .2s; }
+.hero-breadcrumb a:hover { color: var(--orange); }
+.catalogo-hero h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 4vw, 3rem);
+    color: var(--dark);
+    margin-bottom: 10px;
+}
+.catalogo-hero p { color: var(--text-light); font-size: 1rem; }
+
+.hero-blobs-mini { position: absolute; inset: 0; pointer-events: none; }
+.mini-blob {
+    position: absolute; border-radius: 50%;
+    filter: blur(50px); opacity: 0.25;
+}
+.mb1 { width: 280px; height: 280px; background: var(--yellow); top: -80px; left: -60px; }
+.mb2 { width: 240px; height: 240px; background: var(--green);  bottom: -60px; right: -40px; }
+
+/* ── Navbar active ── */
+.nav-links a.active { color: var(--dark); }
+.nav-links a.active::after { transform: scaleX(1); }
+
+/* ── Sección filtros ── */
+.filtros-section {
+    background: white;
+    padding: 28px 0;
+    border-bottom: 2px solid #f0f0f0;
+    position: sticky; top: 70px; z-index: 50;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+/* Buscador */
+.search-wrap {
+    position: relative;
+    margin-bottom: 20px;
+}
+.search-icon {
+    position: absolute; left: 18px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem; pointer-events: none;
+}
+.search-wrap input {
+    width: 100%;
+    padding: 14px 48px 14px 50px;
+    border: 2px solid #e5e7eb;
+    border-radius: 50px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dark);
+    outline: none;
+    transition: border-color .25s, box-shadow .25s;
+    background: #fafafa;
+}
+.search-wrap input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(6,214,160,0.15);
+    background: white;
+}
+.search-wrap input::placeholder { color: #9ca3af; font-weight: 600; }
+.search-clear {
+    position: absolute; right: 18px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem; color: #9ca3af;
+    font-weight: 800;
+    transition: color .2s;
+    cursor: pointer;
+}
+.search-clear:hover { color: var(--orange); }
+
+/* Fila de filtros */
+.filtros-row {
+    display: flex; flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+}
+.filtro-group {
+    display: flex; align-items: center;
+    flex-wrap: wrap; gap: 8px;
+}
+.filtro-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-light);
+    white-space: nowrap;
+}
+.filtro-pills {
+    display: flex; flex-wrap: wrap; gap: 8px;
+}
+
+/* Pills como botones de form */
+.filtro-pills .pill {
+    border: none;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem;
+}
+.filtro-pills .pill-cat.active {
+    background: var(--green);
+    color: white;
+}
+.filtro-pills .pill-cat:hover:not(.active) {
+    background: #e0fdf4;
+    color: var(--dark);
+}
+
+/* Select ordenar */
+.filtro-orden { margin-left: auto; }
+.filtro-orden select {
+    padding: 8px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 50px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--dark);
+    background: white;
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+}
+.filtro-orden select:focus { border-color: var(--green); }
+
+/* ── Resultados ── */
+.catalogo-resultados { padding: 40px 0 80px; background: #fafafa; }
+
+.resultados-info {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+}
+.resultados-count {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text-light);
+}
+.limpiar-filtros {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--orange);
+    transition: opacity .2s;
+}
+.limpiar-filtros:hover { opacity: 0.7; }
+
+/* Grid catálogo — más columnas que el index */
+.catalogo-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+/* Badge especie en card */
+.card-especie-badge {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 1.3rem;
+    background: white;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Estado vacío */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+}
+.empty-icon { font-size: 4rem; margin-bottom: 20px; }
+.empty-state h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    color: var(--dark);
+    margin-bottom: 10px;
+}
+.empty-state p {
+    color: var(--text-light);
+    margin-bottom: 32px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .catalogo-hero { padding: 100px 20px 40px; }
+    .filtros-section { top: 60px; }
+    .filtros-row { flex-direction: column; gap: 12px; }
+    .filtro-orden { margin-left: 0; }
+    .catalogo-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}

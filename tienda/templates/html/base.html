@@ -1,0 +1,178 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}VetShop{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ═══════════ NAVBAR ═══════════ -->
+<nav class="navbar">
+    <div class="nav-logo">
+        <span class="logo-icon">🐾</span>
+        <span class="logo-text">VetShop</span>
+    </div>
+
+    <ul class="nav-links">
+        <li><a href="{% url 'index' %}">Inicio</a></li>
+        <li><a href="{% url 'catalogo' %}">Productos</a></li>
+        <li><a href="{% url 'index' %}#nosotros">Nosotros</a></li>
+        <li><a href="{% url 'index' %}#contacto">Contacto</a></li>
+    </ul>
+
+    <div class="nav-actions">
+        {% if user.is_authenticated %}
+            <!-- Botón carrito -->
+            <button class="carrito-toggle" id="carritoToggle" aria-label="Abrir carrito">
+                🛒
+                {% if carrito_cantidad > 0 %}
+                <span class="carrito-badge" id="carritoBadge">{{ carrito_cantidad }}</span>
+                {% else %}
+                <span class="carrito-badge carrito-badge-hidden" id="carritoBadge">0</span>
+                {% endif %}
+            </button>
+
+            <span class="nav-welcome">👋 <strong>{{ user.first_name|default:user.username }}</strong></span>
+
+            <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="nav-btn logout">Salir</button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}" class="nav-btn">Iniciar sesión</a>
+        {% endif %}
+    </div>
+
+    <button class="hamburger" id="hamburger">&#9776;</button>
+</nav>
+
+<!-- ═══════════ CARRITO DESPLEGABLE ═══════════ -->
+{% if user.is_authenticated %}
+<div class="carrito-overlay" id="carritoOverlay"></div>
+
+<aside class="carrito-drawer" id="carritoDrawer">
+    <div class="carrito-header">
+        <h2>🛒 Mi carrito</h2>
+        <button class="carrito-close" id="carritoClose">✕</button>
+    </div>
+
+    <div class="carrito-body" id="carritoBody">
+        {% if carrito_items %}
+            {% for item in carrito_items %}
+            <div class="carrito-item" id="carritoItem{{ item.id }}" data-item-id="{{ item.id }}" data-stock="{{ item.producto.stock }}">
+                <div class="item-img">
+                    {% if item.producto.imagen %}
+                        <img src="{{ item.producto.imagen.url }}" alt="{{ item.producto.nombre }}">
+                    {% else %}
+                        <span>🐾</span>
+                    {% endif %}
+                </div>
+                <div class="item-info">
+                    <span class="item-nombre">{{ item.producto.nombre }}</span>
+                    <span class="item-precio">${{ item.producto.precio }}</span>
+                    <div class="item-qty">
+                        <button class="qty-btn-sm" onclick="cambiarCantidad({{ item.id }}, {{ item.cantidad }} - 1)">−</button>
+                        <span class="qty-num" id="qty{{ item.id }}">{{ item.cantidad }}</span>
+                        <button class="qty-btn-sm" onclick="cambiarCantidad({{ item.id }}, {{ item.cantidad }} + 1)">+</button>
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <span class="item-subtotal" id="sub{{ item.id }}">${{ item.subtotal }}</span>
+                    <button class="item-delete" onclick="eliminarItem({{ item.id }})">🗑️</button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="carrito-empty" id="carritoEmpty">
+                <div class="empty-paw">🐾</div>
+                <p>Tu carrito está vacío</p>
+                <a href="{% url 'catalogo' %}" class="btn-ver-productos">Ver productos</a>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if carrito_items %}
+    <div class="carrito-footer" id="carritoFooter">
+        <div class="carrito-total">
+            <span>Total</span>
+            <span class="total-precio" id="carritoTotal">${{ carrito.total }}</span>
+        </div>
+        <a href="#" class="btn-checkout">
+            Ir a pagar →
+        </a>
+    </div>
+    {% else %}
+    <div class="carrito-footer carrito-footer-hidden" id="carritoFooter">
+        <div class="carrito-total">
+            <span>Total</span>
+            <span class="total-precio" id="carritoTotal">$0</span>
+        </div>
+        <a href="#" class="btn-checkout">Ir a pagar →</a>
+    </div>
+    {% endif %}
+</aside>
+{% endif %}
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon">✅</span>
+    <span class="toast-msg" id="toastMsg">Producto agregado</span>
+</div>
+
+<!-- ═══════════ CONTENIDO ═══════════ -->
+{% block content %}{% endblock %}
+
+<!-- ═══════════ FOOTER ═══════════ -->
+{% block footer %}
+<footer class="footer">
+    <div class="footer-top">
+        <div class="footer-brand">
+            <div class="footer-logo"><span>🐾</span> VetShop</div>
+            <p>Tu tienda veterinaria de confianza. Porque ellos son familia.</p>
+            <div class="social-links">
+                <a href="#" class="social-btn">📘</a>
+                <a href="#" class="social-btn">📸</a>
+                <a href="#" class="social-btn">🐦</a>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h4>Productos</h4>
+            <ul>
+                <li><a href="#">Alimentos</a></li>
+                <li><a href="#">Juguetes</a></li>
+                <li><a href="#">Accesorios</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Mascotas</h4>
+            <ul>
+                <li><a href="#">Perros</a></li>
+                <li><a href="#">Gatos</a></li>
+                <li><a href="#">Aves</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Contacto</h4>
+            <ul>
+                <li>📧 hola@vetshop.cl</li>
+                <li>📞 +56 9 1234 5678</li>
+                <li>📍 Santiago, Chile</li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>© 2026 VetShop — Hecho con 💚 para las mascotas de Chile</p>
+    </div>
+</footer>
+{% endblock %}
+
+<script src="{% static 'js/base.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

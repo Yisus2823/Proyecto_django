@@ -1,45 +1,142 @@
+{% extends 'html/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ producto.nombre }}</title>
-</head>
-<body>
-    <a href="{% url 'admin:index' %}">Ir al Admin</a>
-    
-    <div class="producto-principal">
-        {% if producto.imagen %}
-            <img src="{{ producto.imagen.url }}" width="300">
-        {% endif %}
-        <h1>{{ producto.nombre }}</h1>
-        <p>Precio: ${{ producto.precio }}</p>
-        <p>{{ producto.descripcion }}</p>
-    </div>
 
-    <hr>
+{% block title %}{{ producto.nombre }} — VetShop{% endblock %}
 
-    <h3>Recomendaciones de IA Gemini:</h3>
-    <div style="display: flex; gap: 20px;">
-        {% for rec in recomendaciones %}
-            <div style="border: 1px solid #ccc; padding: 10px; width: 200px;">
-                {% if rec.imagen %}
-                    <img src="{{ rec.imagen.url }}" width="100%">
-                {% endif %}
-                <h4>{{ rec.nombre }}</h4>
-                
-                <p style="font-size: 0.8em; color: blue;">
-                    {% for exp in explicaciones %}
-                        {% if exp.id == rec.id %}
-                            "{{ exp.razon }}"
-                        {% endif %}
-                    {% endfor %}
-                </p>
-                
-                <a href="/producto/{{ rec.id }}">Ver más</a>
 
-                <a href="{% url 'detalle_producto' rec.id %}">Ver más</a>   
+{% block content %}
+
+<!-- ═══════════ DETALLE PRODUCTO ═══════════ -->
+<main class="detalle-main">
+    <div class="container">
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="{% url 'index' %}">Inicio</a>
+            <span>→</span>
+            <a href="{% url 'catalogo' %}">Catálogo</a>
+            <span>→</span>
+            <span>{{ producto.nombre }}</span>
+        </div>
+
+        <!-- Grid principal -->
+        <div class="detalle-grid">
+
+            <!-- Imagen -->
+            <div class="detalle-imagen">
+                <div class="img-card">
+                    {% if producto.imagen %}
+                        <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                    {% else %}
+                        <div class="img-placeholder-lg">🐾</div>
+                    {% endif %}
+                    <div class="especie-tag">
+                        {% if producto.especie == 'perro' %}🐶 Perros
+                        {% elif producto.especie == 'gato' %}🐱 Gatos
+                        {% elif producto.especie == 'ave' %}🐦 Aves
+                        {% elif producto.especie == 'pez' %}🐠 Peces
+                        {% elif producto.especie == 'roedor' %}🐹 Roedores
+                        {% else %}🐾 Universal{% endif %}
+                    </div>
+                </div>
             </div>
-        {% endfor %}
+
+            <!-- Info -->
+            <div class="detalle-info">
+                <span class="detalle-categoria">{{ producto.categoria }}</span>
+                <h1 class="detalle-nombre">{{ producto.nombre }}</h1>
+
+                <div class="detalle-precio-wrap">
+                    <span class="detalle-precio">${{ producto.precio }}</span>
+                    {% if producto.stock > 0 %}
+                        <span class="stock-badge stock-ok">✓ En stock ({{ producto.stock }} disponibles)</span>
+                    {% else %}
+                        <span class="stock-badge stock-out">✕ Sin stock</span>
+                    {% endif %}
+                </div>
+
+                <p class="detalle-descripcion">{{ producto.descripcion }}</p>
+                <div class="detalle-divider"></div>
+
+                {% if user.is_authenticated %}
+                    {% if producto.stock > 0 %}
+                    <div class="cantidad-wrap">
+                        <button class="qty-btn" id="qtyMinus">−</button>
+                        <span class="qty-value" id="qtyValue">1</span>
+                        <button class="qty-btn" id="qtyPlus">+</button>
+                    </div>
+                    <button class="btn-agregar" id="btnAgregar"
+                            data-producto-id="{{ producto.id }}"
+                            data-csrf="{{ csrf_token }}">
+                        <span class="btn-agregar-icon">🛒</span>
+                        <span class="btn-agregar-text">Agregar al carrito</span>
+                    </button>
+                    {% else %}
+                    <button class="btn-agregar btn-disabled" disabled>
+                        <span>😔</span> Sin stock por ahora
+                    </button>
+                    {% endif %}
+                {% else %}
+                    <div class="login-wall">
+                        <div class="login-wall-icon">🔐</div>
+                        <div class="login-wall-text">
+                            <strong>Inicia sesión para comprar</strong>
+                            <p>Necesitas una cuenta para agregar productos al carrito</p>
+                        </div>
+                        <div class="login-wall-actions">
+                            <a href="{% url 'login' %}?next={{ request.path }}" class="btn-login-wall">Iniciar sesión</a>
+                            <a href="{% url 'registro' %}" class="btn-registro-wall">Crear cuenta</a>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="detalle-extras">
+                    <div class="extra-item"><span>🚚</span><span>Envío gratis sobre $30.000</span></div>
+                    <div class="extra-item"><span>🔒</span><span>Compra 100% segura</span></div>
+                    <div class="extra-item"><span>↩️</span><span>Devolución en 7 días</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ RECOMENDACIONES IA ═══ -->
+        {% if recomendaciones %}
+        <div class="recomendaciones-section">
+            <div class="section-header">
+                <h2>También te puede <span class="highlight">interesar</span></h2>
+                <p>Recomendaciones personalizadas por IA 🤖</p>
+            </div>
+            <div class="recomendaciones-grid">
+                {% for rec in recomendaciones %}
+                <div class="producto-card">
+                    <div class="card-img-wrap">
+                        {% if rec.imagen %}
+                            <img src="{{ rec.imagen.url }}" alt="{{ rec.nombre }}" loading="lazy">
+                        {% else %}
+                            <div class="img-placeholder">🐾</div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <span class="card-category">{{ rec.categoria }}</span>
+                        <h3 class="card-title">{{ rec.nombre }}</h3>
+                        <p class="card-desc ia-razon">
+                            🤖 {% for exp in explicaciones %}{% if exp.id == rec.id %}{{ exp.razon }}{% endif %}{% endfor %}
+                        </p>
+                        <div class="card-footer">
+                            <span class="card-price">${{ rec.precio }}</span>
+                            <a href="{% url 'detalle_producto' rec.id %}" class="btn-card">Ver más →</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
     </div>
-</body>
-</html>
+</main>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/detalle.js' %}"></script>
+{% endblock %}

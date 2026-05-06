@@ -1,0 +1,146 @@
+{% extends 'html/base.html' %}
+{% load static %}
+
+{% block title %}VetShop — Catálogo{% endblock %}
+
+
+{% block content %}
+
+<!-- ═══════════ HERO CATÁLOGO ═══════════ -->
+<section class="catalogo-hero">
+    <div class="catalogo-hero-content">
+        <div class="hero-breadcrumb">
+            <a href="{% url 'index' %}">Inicio</a>
+            <span>→</span>
+            <span>Catálogo</span>
+        </div>
+        <h1>Todos nuestros <span class="highlight">Productos</span></h1>
+        <p>{{ total_productos }} productos disponibles para tu mascota</p>
+    </div>
+    <div class="hero-blobs-mini">
+        <div class="mini-blob mb1"></div>
+        <div class="mini-blob mb2"></div>
+    </div>
+</section>
+
+<!-- ═══════════ BARRA DE BÚSQUEDA Y FILTROS ═══════════ -->
+<section class="filtros-section">
+    <div class="container">
+        <form method="get" action="{% url 'catalogo' %}" id="filtrosForm">
+
+            <div class="search-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" name="q" id="searchInput"
+                    placeholder="Buscar productos..."
+                    value="{{ query|default:'' }}"
+                    autocomplete="off">
+                {% if query %}
+                <a href="{% url 'catalogo' %}" class="search-clear">✕</a>
+                {% endif %}
+            </div>
+
+            <div class="filtros-row">
+
+                <div class="filtro-group">
+                    <span class="filtro-label">Mascota:</span>
+                    <div class="filtro-pills">
+                        <button type="button" class="pill pill-especie {% if not especie_activa %}active{% endif %}" data-value="">🐾 Todo</button>
+                        <button type="button" class="pill pill-especie {% if especie_activa == 'perro' %}active{% endif %}" data-value="perro">🐶 Perros</button>
+                        <button type="button" class="pill pill-especie {% if especie_activa == 'gato' %}active{% endif %}" data-value="gato">🐱 Gatos</button>
+                        <button type="button" class="pill pill-especie {% if especie_activa == 'ave' %}active{% endif %}" data-value="ave">🐦 Aves</button>
+                        <button type="button" class="pill pill-especie {% if especie_activa == 'pez' %}active{% endif %}" data-value="pez">🐠 Peces</button>
+                        <button type="button" class="pill pill-especie {% if especie_activa == 'roedor' %}active{% endif %}" data-value="roedor">🐹 Roedores</button>
+                    </div>
+                </div>
+
+                <div class="filtro-group">
+                    <span class="filtro-label">Categoría:</span>
+                    <div class="filtro-pills">
+                        <button type="button" class="pill pill-cat {% if not categoria_activa %}active{% endif %}" data-value="">Todas</button>
+                        {% for cat in categorias %}
+                        <button type="button" class="pill pill-cat {% if categoria_activa == cat.id|stringformat:'s' %}active{% endif %}" data-value="{{ cat.id }}">{{ cat.nombre }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="filtro-group filtro-orden">
+                    <span class="filtro-label">Ordenar:</span>
+                    <select name="orden" id="ordenSelect">
+                        <option value=""           {% if not orden %}selected{% endif %}>Relevancia</option>
+                        <option value="precio_asc" {% if orden == 'precio_asc' %}selected{% endif %}>Precio: menor a mayor</option>
+                        <option value="precio_desc"{% if orden == 'precio_desc' %}selected{% endif %}>Precio: mayor a menor</option>
+                        <option value="nombre"     {% if orden == 'nombre' %}selected{% endif %}>Nombre A-Z</option>
+                    </select>
+                </div>
+
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- ═══════════ RESULTADOS ═══════════ -->
+<section class="catalogo-resultados">
+    <div class="container">
+
+        <div class="resultados-info">
+            <span class="resultados-count">
+                {% if productos %}
+                    {{ productos|length }} producto{{ productos|length|pluralize }} encontrado{{ productos|length|pluralize }}
+                {% else %}
+                    Sin resultados
+                {% endif %}
+            </span>
+            {% if query or especie_activa or categoria_activa %}
+            <a href="{% url 'catalogo' %}" class="limpiar-filtros">✕ Limpiar filtros</a>
+            {% endif %}
+        </div>
+
+        {% if productos %}
+        <div class="productos-grid catalogo-grid" id="catalogoGrid">
+            {% for producto in productos %}
+            <div class="producto-card" style="animation-delay: {{ forloop.counter0 }}0ms">
+                <div class="card-img-wrap">
+                    {% if producto.imagen %}
+                        <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" loading="lazy">
+                    {% else %}
+                        <div class="img-placeholder">🐾</div>
+                    {% endif %}
+                    <div class="card-especie-badge">
+                        {% if producto.especie == 'perro' %}🐶
+                        {% elif producto.especie == 'gato' %}🐱
+                        {% elif producto.especie == 'ave' %}🐦
+                        {% elif producto.especie == 'pez' %}🐠
+                        {% elif producto.especie == 'roedor' %}🐹
+                        {% else %}🐾{% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <span class="card-category">{{ producto.categoria }}</span>
+                    <h3 class="card-title">{{ producto.nombre }}</h3>
+                    <p class="card-desc">{{ producto.descripcion|truncatewords:10 }}</p>
+                    <div class="card-footer">
+                        <span class="card-price">${{ producto.precio }}</span>
+                        <a href="{% url 'detalle_producto' producto.id %}" class="btn-card">Ver más →</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h3>No encontramos productos</h3>
+            <p>Intenta con otros filtros o términos de búsqueda</p>
+            <a href="{% url 'catalogo' %}" class="btn-primary">Ver todos los productos</a>
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/catalogo.js' %}"></script>
+{% endblock %}

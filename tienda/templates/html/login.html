@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VetShop — Iniciar sesión</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+
+<!-- Canvas para partículas de huellas -->
+<canvas id="pawCanvas"></canvas>
+
+<!-- Blobs de color de fondo -->
+<div class="bg-blobs">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+</div>
+
+<!-- Contenedor principal -->
+<div class="login-wrapper">
+
+    <!-- Panel izquierdo — branding -->
+    <div class="brand-panel">
+        <div class="brand-content">
+            <div class="brand-logo">
+                <span class="logo-paw">🐾</span>
+                <span class="logo-name">VetShop</span>
+            </div>
+            <h2 class="brand-tagline">Tu tienda<br><span>veterinaria</span><br>de confianza</h2>
+            <p class="brand-sub">Miles de productos para que tus mascotas vivan su mejor vida.</p>
+
+            <div class="brand-stats">
+                <div class="stat">
+                    <strong>500+</strong>
+                    <span>Productos</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <strong>1.2K</strong>
+                    <span>Clientes</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <strong>5★</strong>
+                    <span>Rating</span>
+                </div>
+            </div>
+
+            <!-- Floating pet chips -->
+            <div class="pet-chip chip-dog">🐶 Perros</div>
+            <div class="pet-chip chip-cat">🐱 Gatos</div>
+            <div class="pet-chip chip-bird">🐦 Aves</div>
+        </div>
+    </div>
+
+    <!-- Panel derecho — formulario -->
+    <div class="form-panel">
+        <div class="form-card">
+
+            <div class="form-header">
+                <div class="form-icon">🔐</div>
+                <h1>Bienvenido de vuelta</h1>
+                <p>Ingresa a tu cuenta para continuar</p>
+            </div>
+
+            <!-- Mensajes de error Django -->
+            {% if form.errors %}
+            <div class="alert-error">
+                <span>⚠️</span> Usuario o contraseña incorrectos
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}" class="login-form" id="loginForm">
+                {% csrf_token %}
+
+                <div class="field-group" id="fieldUser">
+                    <label for="id_username">Usuario</label>
+                    <div class="input-wrap">
+                        <span class="input-icon">👤</span>
+                        <input
+                            type="text"
+                            name="username"
+                            id="id_username"
+                            placeholder="Tu nombre de usuario"
+                            autocomplete="username"
+                            required
+                        >
+                        <div class="input-line"></div>
+                    </div>
+                </div>
+
+                <div class="field-group" id="fieldPass">
+                    <label for="id_password">Contraseña</label>
+                    <div class="input-wrap">
+                        <span class="input-icon">🔒</span>
+                        <input
+                            type="password"
+                            name="password"
+                            id="id_password"
+                            placeholder="Tu contraseña"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <button type="button" class="toggle-pass" id="togglePass" title="Ver contraseña">👁️</button>
+                        <div class="input-line"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login" id="btnLogin">
+                    <span class="btn-text">Ingresar</span>
+                    <span class="btn-icon">→</span>
+                    <div class="btn-ripple"></div>
+                </button>
+
+            </form>
+
+            <div class="form-footer">
+                <a href="{% url 'index' %}">← Volver a la tienda</a>
+            </div>
+
+            <div class="register-link">
+                <span>¿No tienes cuenta?</span>
+                <a href="{% url 'registro' %}" class="btn-register">Crear cuenta →</a>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script src="{% static 'js/login.js' %}"></script>
+</body>
+</html>

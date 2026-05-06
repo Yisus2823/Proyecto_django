@@ -1,0 +1,175 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VetShop — Crear cuenta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/registro.css' %}">
+</head>
+<body class="registro-page">
+
+<canvas id="pawCanvas"></canvas>
+<div class="bg-blobs">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+</div>
+
+<div class="registro-wrapper">
+
+    <!-- Header top -->
+    <div class="registro-top">
+        <a href="{% url 'login' %}" class="back-btn">← Volver al login</a>
+        <div class="brand-logo-small">
+            <span>🐾</span> VetShop
+        </div>
+    </div>
+
+    <!-- Card central -->
+    <div class="registro-card">
+
+        <div class="registro-header">
+            <div class="registro-icon">🐾</div>
+            <h1>Crear cuenta</h1>
+            <p>Únete a la familia VetShop</p>
+        </div>
+
+        <!-- Errores generales -->
+        {% if form.non_field_errors %}
+        <div class="alert-error">
+            <span>⚠️</span> {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'registro' %}" id="registroForm">
+            {% csrf_token %}
+
+            <!-- Fila: nombre y apellido -->
+            <div class="fields-row">
+                <div class="field-group {% if form.first_name.errors %}has-error{% endif %}">
+                    <label>Nombre</label>
+                    <div class="input-wrap">
+                        <span class="input-icon">✏️</span>
+                        <input type="text" name="first_name" placeholder="Tu nombre"
+                               value="{{ form.first_name.value|default:'' }}" required>
+                        <div class="input-line"></div>
+                    </div>
+                    {% if form.first_name.errors %}
+                        <span class="field-error">{{ form.first_name.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="field-group {% if form.last_name.errors %}has-error{% endif %}">
+                    <label>Apellido</label>
+                    <div class="input-wrap">
+                        <span class="input-icon">✏️</span>
+                        <input type="text" name="last_name" placeholder="Tu apellido"
+                               value="{{ form.last_name.value|default:'' }}">
+                        <div class="input-line"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Username -->
+            <div class="field-group {% if form.username.errors %}has-error{% endif %}">
+                <label>Usuario</label>
+                <div class="input-wrap">
+                    <span class="input-icon">👤</span>
+                    <input type="text" name="username" placeholder="Nombre de usuario"
+                           value="{{ form.username.value|default:'' }}" required>
+                    <div class="input-line"></div>
+                </div>
+                {% if form.username.errors %}
+                    <span class="field-error">{{ form.username.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Email -->
+            <div class="field-group {% if form.email.errors %}has-error{% endif %}">
+                <label>Correo electrónico</label>
+                <div class="input-wrap">
+                    <span class="input-icon">📧</span>
+                    <input type="email" name="email" placeholder="correo@ejemplo.com"
+                           value="{{ form.email.value|default:'' }}" required>
+                    <div class="input-line"></div>
+                </div>
+                {% if form.email.errors %}
+                    <span class="field-error">{{ form.email.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Dirección -->
+            <div class="field-group {% if form.direccion.errors %}has-error{% endif %}">
+                <label>Dirección</label>
+                <div class="input-wrap">
+                    <span class="input-icon">📍</span>
+                    <input type="text" name="direccion" placeholder="Tu dirección de envío"
+                           value="{{ form.direccion.value|default:'' }}">
+                    <div class="input-line"></div>
+                </div>
+            </div>
+
+            <!-- Contraseña -->
+            <div class="fields-row">
+                <div class="field-group {% if form.password1.errors %}has-error{% endif %}">
+                    <label>Contraseña</label>
+                    <div class="input-wrap">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" name="password1" id="pass1"
+                               placeholder="Mínimo 8 caracteres" required>
+                        <button type="button" class="toggle-pass" data-target="pass1">👁️</button>
+                        <div class="input-line"></div>
+                    </div>
+                    {% if form.password1.errors %}
+                        <span class="field-error">{{ form.password1.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="field-group {% if form.password2.errors %}has-error{% endif %}">
+                    <label>Confirmar contraseña</label>
+                    <div class="input-wrap">
+                        <span class="input-icon">🔑</span>
+                        <input type="password" name="password2" id="pass2"
+                               placeholder="Repite la contraseña" required>
+                        <button type="button" class="toggle-pass" data-target="pass2">👁️</button>
+                        <div class="input-line"></div>
+                    </div>
+                    {% if form.password2.errors %}
+                        <span class="field-error">{{ form.password2.errors.0 }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Indicador fortaleza contraseña -->
+            <div class="strength-wrap" id="strengthWrap">
+                <div class="strength-bar">
+                    <div class="strength-fill" id="strengthFill"></div>
+                </div>
+                <span class="strength-label" id="strengthLabel">Ingresa una contraseña</span>
+            </div>
+
+            <!-- Botón submit -->
+            <button type="submit" class="btn-login btn-registro" id="btnRegistro">
+                <span class="btn-text">Crear cuenta</span>
+                <span class="btn-icon">🐾</span>
+                <div class="btn-ripple"></div>
+            </button>
+
+        </form>
+
+        <div class="form-footer" style="margin-top: 20px;">
+            <span style="color: var(--text-muted); font-size: 0.88rem;">¿Ya tienes cuenta?</span>
+            <a href="{% url 'login' %}" style="color: var(--yellow); font-weight: 800; font-size: 0.88rem; margin-left: 8px;">Iniciar sesión →</a>
+        </div>
+
+    </div>
+</div>
+
+<script src="{% static 'js/login.js' %}"></script>
+<script src="{% static 'js/registro.js' %}"></script>
+</body>
+</html>
