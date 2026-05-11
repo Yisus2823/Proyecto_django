@@ -1,0 +1,260 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout — VetShop 🐾</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/formularios.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+</head>
+<body class="checkout-page">
+
+    <!-- Fondo animado (mismo sistema que login/registro) -->
+    <canvas id="pawCanvas"></canvas>
+    <div class="bg-blobs">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+        <div class="blob b3"></div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         WRAPPER PRINCIPAL
+    ════════════════════════════════════ -->
+    <div class="checkout-wrapper">
+
+        <!-- Top bar -->
+        <div class="checkout-top">
+            <a href="{% url 'index' %}" class="back-btn">← Seguir comprando</a>
+            <div class="brand-logo-small">
+                <span class="logo-paw">🐾</span> VetShop
+            </div>
+            <span class="secure-label">🔒 Pago seguro</span>
+        </div>
+
+        <!-- Grid: resumen (izq) + pago (der) -->
+        <div class="checkout-grid">
+
+            <!-- ════════════════════════════
+                 COLUMNA IZQUIERDA — Resumen
+            ════════════════════════════ -->
+            <div class="checkout-resumen">
+
+                <h2 class="checkout-section-title">Tu pedido</h2>
+
+                <!-- Lista de ítems -->
+                <div class="resumen-items">
+                    {% for item in carrito_items %}
+                    <div class="resumen-item">
+
+                        <!-- Imagen + badge cantidad -->
+                        <div class="resumen-item-img">
+                            {% if item.producto.imagen %}
+                                <img src="{{ item.producto.imagen.url }}" alt="{{ item.producto.nombre }}">
+                            {% else %}
+                                <div class="resumen-item-emoji">
+                                    {% if item.producto.especie == 'perro' %}🐶
+                                    {% elif item.producto.especie == 'gato' %}🐱
+                                    {% elif item.producto.especie == 'ave' %}🐦
+                                    {% elif item.producto.especie == 'pez' %}🐠
+                                    {% elif item.producto.especie == 'roedor' %}🐹
+                                    {% else %}🐾{% endif %}
+                                </div>
+                            {% endif %}
+                            <span class="resumen-item-qty">{{ item.cantidad }}</span>
+                        </div>
+
+                        <!-- Info -->
+                        <div class="resumen-item-info">
+                            <span class="resumen-item-nombre">{{ item.producto.nombre }}</span>
+                            <span class="resumen-item-cat">{{ item.producto.categoria }}</span>
+                        </div>
+
+                        <!-- Subtotal -->
+                        <span class="resumen-item-subtotal">${{ item.subtotal|floatformat:0 }}</span>
+
+                    </div>
+                    {% empty %}
+                    <div class="resumen-empty">
+                        <span>🛒</span>
+                        <p>Tu carrito está vacío</p>
+                        <a href="{% url 'catalogo' %}" class="btn-volver-catalogo">Ver productos</a>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Totales -->
+                {% if carrito_items %}
+                <div class="resumen-totales">
+                    <div class="total-row">
+                        <span>Subtotal</span>
+                        <span>${{ carrito.total|floatformat:0 }}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Envío</span>
+                        <span class="envio-gratis">Gratis 🎉</span>
+                    </div>
+                    <div class="total-divider"></div>
+                    <div class="total-row total-final">
+                        <span>Total</span>
+                        <span>${{ carrito.total|floatformat:0 }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Garantías -->
+                <div class="checkout-garantias">
+                    <div class="garantia-item">
+                        <span>🔒</span>
+                        <span>Pago 100% seguro</span>
+                    </div>
+                    <div class="garantia-item">
+                        <span>🚚</span>
+                        <span>Envío gratis siempre</span>
+                    </div>
+                    <div class="garantia-item">
+                        <span>↩️</span>
+                        <span>Devoluciones fáciles</span>
+                    </div>
+                </div>
+
+            </div>
+            <!-- /columna izquierda -->
+
+
+            <!-- ════════════════════════════
+                 COLUMNA DERECHA — Pago
+            ════════════════════════════ -->
+            <div class="checkout-pago">
+
+                <h2 class="checkout-section-title">Método de pago</h2>
+
+                <!-- Tabs -->
+                <div class="metodos-tabs" role="tablist">
+
+                    <button class="metodo-tab active" data-metodo="paypal"
+                            role="tab" aria-selected="true">
+                        <span class="paypal-logo">Pay<span>Pal</span></span>
+                    </button>
+
+                    <button class="metodo-tab" data-metodo="transferencia"
+                            role="tab" aria-selected="false">
+                        <span>🏦</span>
+                        <span>Transferencia</span>
+                    </button>
+
+                    <button class="metodo-tab metodo-disabled" data-metodo="mercadopago"
+                            role="tab" aria-selected="false" disabled>
+                        <span>💳</span>
+                        <span>Mercado Pago</span>
+                        <span class="pronto-badge">Pronto</span>
+                    </button>
+
+                </div>
+
+                <!-- ── Panel PayPal ── -->
+                <div class="metodo-panel active" id="panel-paypal">
+                    <p class="metodo-descripcion">
+                        Serás redirigido a PayPal para completar tu compra de forma segura.
+                        El pago se acredita de forma inmediata.
+                    </p>
+                    <div class="metodo-features">
+                        <div class="metodo-feature">✅ Pago inmediato</div>
+                        <div class="metodo-feature">✅ Protección al comprador</div>
+                        <div class="metodo-feature">✅ Sin datos de tarjeta en el sitio</div>
+                    </div>
+
+                    <button type="button" id="btn-paypal" class="btn-pagar btn-paypal"
+                            {% if not carrito_items %}disabled{% endif %}>
+                        <span>💙</span>
+                        <span class="btn-pagar-text">Pagar con PayPal</span>
+                        <span class="btn-pagar-total">${{ carrito.total|floatformat:0 }}</span>
+                    </button>
+                </div>
+
+                <!-- ── Panel Transferencia ── -->
+                <div class="metodo-panel" id="panel-transferencia">
+
+                    <p class="metodo-descripcion">
+                        Realiza una transferencia bancaria a nuestra cuenta. Tu pedido quedará en
+                        estado <strong>pendiente de pago</strong> hasta que confirmemos la recepción.
+                    </p>
+
+                    <!-- Datos bancarios -->
+                    <div class="banco-datos">
+                        <div class="banco-row">
+                            <span class="banco-label">Banco</span>
+                            <span class="banco-valor">Banco Estado</span>
+                        </div>
+                        <div class="banco-row">
+                            <span class="banco-label">Tipo de cuenta</span>
+                            <span class="banco-valor">Cuenta Corriente</span>
+                        </div>
+                        <div class="banco-row">
+                            <span class="banco-label">N° de cuenta</span>
+                            <span class="banco-valor">
+                                <span id="nro-cuenta">00-123-45678-09</span>
+                                <button class="btn-copy" onclick="copiar('nro-cuenta', this)">📋</button>
+                            </span>
+                        </div>
+                        <div class="banco-row">
+                            <span class="banco-label">RUT empresa</span>
+                            <span class="banco-valor">
+                                <span id="rut-empresa">76.XXX.XXX-X</span>
+                                <button class="btn-copy" onclick="copiar('rut-empresa', this)">📋</button>
+                            </span>
+                        </div>
+                        <div class="banco-row">
+                            <span class="banco-label">Email</span>
+                            <span class="banco-valor">
+                                <span id="email-banco">pagos@vetshop.cl</span>
+                                <button class="btn-copy" onclick="copiar('email-banco', this)">📋</button>
+                            </span>
+                        </div>
+                        <div class="banco-row banco-total-row">
+                            <span class="banco-label">Monto a transferir</span>
+                            <span class="banco-monto">${{ carrito.total|floatformat:0 }}</span>
+                        </div>
+                    </div>
+
+                    <div class="transferencia-aviso">
+                        ⏳ Envía el comprobante a <strong>pagos@vetshop.cl</strong> indicando tu usuario
+                        para agilizar la confirmación.
+                    </div>
+
+                    <form method="post" action="{% url 'pago_transferencia' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-pagar btn-transferencia"
+                                {% if not carrito_items %}disabled{% endif %}>
+                            <span>🏦</span>
+                            <span class="btn-pagar-text">Confirmar pedido</span>
+                            <span class="btn-pagar-total">${{ carrito.total|floatformat:0 }}</span>
+                        </button>
+                    </form>
+
+                </div>
+
+                <!-- ── Panel Mercado Pago (placeholder) ── -->
+                <div class="metodo-panel" id="panel-mercadopago">
+                    <div class="pronto-placeholder">
+                        <span>🚧</span>
+                        <h3>Mercado Pago — Próximamente</h3>
+                        <p>Estamos integrando esta pasarela. Por ahora usa PayPal o Transferencia.</p>
+                    </div>
+                </div>
+
+            </div>
+            <!-- /columna derecha -->
+
+        </div>
+        <!-- /checkout-grid -->
+
+    </div>
+    <!-- /checkout-wrapper -->
+
+<script src="{% static 'js/chekout.js' %}"></script>
+</body>
+</html>

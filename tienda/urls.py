@@ -11,4 +11,9 @@ urlpatterns = [
     path('carrito/agregar/<int:producto_id>/',      views.agregar_al_carrito,      name='agregar_al_carrito'),
     path('carrito/actualizar/<int:item_id>/',       views.actualizar_item_carrito, name='actualizar_item_carrito'),
     path('carrito/eliminar/<int:item_id>/',         views.eliminar_item_carrito,   name='eliminar_item_carrito'),
+    path('checkout/',                   views.checkout,              name='checkout'),
+    path('pago/paypal/',                views.pago_paypal,           name='pago_paypal'),
+    path('pago/paypal/exitoso/',        views.pago_paypal_exitoso,   name='pago_paypal_exitoso'),
+    path('pago/paypal/cancelado/',      views.pago_paypal_cancelado, name='pago_paypal_cancelado'),
+    path('pago/transferencia/',         views.pago_transferencia,    name='pago_transferencia'),
 ]

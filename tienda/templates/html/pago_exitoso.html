@@ -1,0 +1,146 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if venta.estado == 'pagado' %}¡Pago exitoso!{% else %}Pedido en revisión{% endif %} — VetShop 🐾</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body class="boleta-page">
+ 
+    <div class="boleta-topbar">
+        <a href="{% url 'index' %}" class="boleta-brand"><span>🐾</span> VetShop</a>
+    </div>
+ 
+    <div class="boleta-wrapper">
+ 
+        <!-- Icono animado de estado -->
+        <div class="boleta-estado-icon {% if venta.estado == 'pagado' %}estado-pagado{% else %}estado-pendiente{% endif %}">
+            {% if venta.estado == 'pagado' %}
+            <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle class="check-circle" cx="26" cy="26" r="24" stroke="currentColor" stroke-width="2.5"/>
+                <path class="check-mark" d="M14 26l9 9 15-15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            {% else %}
+            <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle class="check-circle" cx="26" cy="26" r="24" stroke="currentColor" stroke-width="2.5"/>
+                <path d="M26 16v12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="26" cy="34" r="1.5" fill="currentColor"/>
+            </svg>
+            {% endif %}
+        </div>
+ 
+        <!-- Título -->
+        <div class="boleta-header-text">
+            {% if venta.estado == 'pagado' %}
+                <h1 class="boleta-titulo">¡Pago realizado con éxito! 🎉</h1>
+                <p class="boleta-subtitulo">Gracias <strong>{{ venta.cliente.username }}</strong>, tu pedido fue confirmado. Recibirás tus productos pronto. 🐾</p>
+            {% else %}
+                <h1 class="boleta-titulo">Pedido en revisión 🕐</h1>
+                <p class="boleta-subtitulo">Gracias <strong>{{ venta.cliente.username }}</strong>, recibimos tu pedido. Lo confirmaremos en cuanto verifiquemos tu transferencia.</p>
+            {% endif %}
+        </div>
+ 
+        <!-- Boleta -->
+        <div class="boleta-card" id="boleta-imprimir">
+ 
+            <div class="boleta-card-header">
+                <div class="boleta-info-col">
+                    <span class="boleta-label">N° de pedido</span>
+                    <span class="boleta-valor">#{{ venta.id|stringformat:"05d" }}</span>
+                </div>
+                <div class="boleta-info-col">
+                    <span class="boleta-label">Fecha</span>
+                    <span class="boleta-valor">{{ venta.fecha|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="boleta-info-col">
+                    <span class="boleta-label">Estado</span>
+                    <span class="boleta-badge {% if venta.estado == 'pagado' %}badge-pagado{% else %}badge-pendiente{% endif %}">
+                        {% if venta.estado == 'pagado' %}✅ Pagado{% else %}⏳ En revisión{% endif %}
+                    </span>
+                </div>
+            </div>
+ 
+            <div class="boleta-divider"></div>
+ 
+            <div class="boleta-productos">
+                <div class="boleta-productos-titulo">Detalle de productos</div>
+                {% for detalle in venta.detalleventa_set.all %}
+                <div class="boleta-producto-row">
+                    <div class="boleta-producto-img">
+                        {% if detalle.producto.imagen %}
+                            <img src="{{ detalle.producto.imagen.url }}" alt="{{ detalle.producto.nombre }}">
+                        {% else %}
+                            <div class="boleta-producto-emoji">
+                                {% if detalle.producto.especie == 'perro' %}🐶
+                                {% elif detalle.producto.especie == 'gato' %}🐱
+                                {% elif detalle.producto.especie == 'ave' %}🐦
+                                {% elif detalle.producto.especie == 'pez' %}🐠
+                                {% elif detalle.producto.especie == 'roedor' %}🐹
+                                {% else %}🐾{% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="boleta-producto-info">
+                        <span class="boleta-producto-nombre">{{ detalle.producto.nombre }}</span>
+                        <span class="boleta-producto-cat">{{ detalle.producto.categoria }}</span>
+                    </div>
+                    <div class="boleta-producto-qty">× {{ detalle.cantidad }}</div>
+                    <div class="boleta-producto-subtotal">
+                        ${{ detalle.precio_unitario|floatformat:0 }}
+                        {% if detalle.cantidad > 1 %}
+                        <span class="boleta-unit-price">${{ detalle.precio_unitario|floatformat:0 }} c/u</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+ 
+            <div class="boleta-divider"></div>
+ 
+            <div class="boleta-totales">
+                <div class="boleta-total-row">
+                    <span>Subtotal</span>
+                    <span>${{ venta.total|floatformat:0 }}</span>
+                </div>
+                <div class="boleta-total-row">
+                    <span>Envío</span>
+                    <span class="boleta-gratis">Gratis 🎉</span>
+                </div>
+                <div class="boleta-total-row boleta-total-final">
+                    <span>Total</span>
+                    <span>${{ venta.total|floatformat:0 }} CLP</span>
+                </div>
+            </div>
+ 
+            <div class="boleta-metodo">
+                <span class="boleta-label">Método de pago</span>
+                <span class="boleta-metodo-valor">
+                    {% if venta.estado == 'pagado' %}💙 PayPal{% else %}🏦 Transferencia bancaria{% endif %}
+                </span>
+            </div>
+ 
+        </div>
+ 
+        {% if venta.estado == 'pendiente' %}
+        <div class="boleta-aviso-transferencia">
+            <span>📧</span>
+            <p>Envía tu comprobante a <strong>pagos@vetshop.cl</strong> indicando tu usuario <strong>{{ venta.cliente.username }}</strong> y el N° <strong>#{{ venta.id|stringformat:"05d" }}</strong>.</p>
+        </div>
+        {% endif %}
+ 
+        <div class="boleta-acciones">
+            <button class="btn-boleta btn-imprimir" onclick="imprimirBoleta()">🖨️ Imprimir boleta</button>
+            <a href="{% url 'catalogo' %}" class="btn-boleta btn-seguir">🐾 Seguir comprando</a>
+            <a href="{% url 'index' %}" class="btn-boleta btn-inicio">🏠 Ir al inicio</a>
+        </div>
+ 
+    </div>
+ 
+    <script src="{% static 'js/pago_exitoso.js' %}"></script>
+</body>
+</html>

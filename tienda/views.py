@@ -1,16 +1,20 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from decouple import config
-from .models import Producto, Categoria, Carrito, ItemCarrito
-from google import genai
-import json
-import re
-from django.shortcuts import redirect, render, get_object_or_404
-from .forms import RegistroForm
 from django.contrib.auth import login
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-
+from django.shortcuts import redirect, render, get_object_or_404
+from django.contrib import messages
+from django.db import transaction
+from django.utils import timezone
+from decouple import config
+from .models import Producto, Categoria, Carrito, ItemCarrito, Venta, DetalleVenta
+from google import genai
+from .forms import RegistroForm
+import paypalrestsdk
+import json
+import re
+import requests as http_requests
 
 
 #-Configguracion ia
@@ -262,3 +266,267 @@ def eliminar_item_carrito(request, item_id):
             'cantidad_total': carrito.cantidad_total(),
         })
     return JsonResponse({'ok': False}, status=400)
+
+# ── Configuración PayPal (se ejecuta una vez al cargar el módulo) ──
+paypalrestsdk.configure({
+    'mode':       config('PAYPAL_MODE', default='sandbox'),
+    'client_id':  config('PAYPAL_CLIENT_ID'),
+    'client_secret': config('PAYPAL_CLIENT_SECRET'),
+})
+ 
+ 
+# ════════════════════════════════════
+#   CHECKOUT — Página principal
+# ════════════════════════════════════
+@login_required
+def checkout(request):
+    """
+    Muestra la página de checkout con el resumen del carrito
+    y los métodos de pago disponibles.
+    Redirige al catálogo si el carrito está vacío.
+    """
+    try:
+        carrito = request.user.carrito
+        items   = carrito.items.select_related('producto').all()
+    except Carrito.DoesNotExist:
+        messages.warning(request, 'Tu carrito está vacío.')
+        return redirect('catalogo')
+ 
+    if not items.exists():
+        messages.warning(request, 'Agrega productos antes de continuar.')
+        return redirect('catalogo')
+ 
+    return render(request, 'html/checkout.html', {
+        'carrito':       carrito,
+        'carrito_items': items,
+    })
+ 
+
+##Aqui esta la conversion de clps a usd 
+def _clp_a_usd(monto_clp):
+    try:
+        api_key = config('EXCHANGERATE_API_KEY')
+        response = http_requests.get(
+            f'https://v6.exchangerate-api.com/v6/{api_key}/pair/CLP/USD',
+            timeout=5,
+        )
+        response.raise_for_status()
+        tasa = response.json()['conversion_rate']
+        return round(monto_clp * tasa, 2)
+
+    except Exception as e:
+        print(">>> ERROR CONVERSIÓN:", e)
+        # Tasa de fallback para desarrollo
+        TASA_FALLBACK = 0.00105
+        return round(monto_clp * TASA_FALLBACK, 2)
+ 
+ 
+# ════════════════════════════════════
+#   PAGO CON PAYPAL — Iniciar (con conversión CLP → USD)
+# ════════════════════════════════════
+@login_required
+def pago_paypal(request):
+    """
+    Convierte el total de CLP a USD y crea el pago en PayPal.
+    El usuario ve los precios en CLP en todo el sitio;
+    PayPal recibe y cobra en USD internamente.
+    """
+
+    if request.method != 'POST':
+        return redirect('checkout')
+ 
+    try:
+        carrito = request.user.carrito
+        items   = carrito.items.select_related('producto').all()
+    except Carrito.DoesNotExist:
+        return redirect('checkout')
+ 
+    if not items.exists():
+        return redirect('checkout')
+ 
+    # Convertir total CLP → USD
+    try:
+        total_usd = _clp_a_usd(carrito.total())
+    except ValueError as e:
+        print(">>> ERROR CONVERSIÓN:", e)
+        messages.error(request, str(e))
+        return redirect('checkout')
+    
+ 
+    # Construir ítems para PayPal
+    # Nota: PayPal requiere que la suma de (precio * qty) sea igual al total.
+    # Como la conversión puede generar decimales imprecisos por ítem,
+    # enviamos un solo ítem con el total consolidado — práctica estándar.
+    item_list = [{
+        'name':     f'Compra VetShop ({items.count()} producto/s)',
+        'sku':      'pedido-vetshop',
+        'price':    f'{total_usd:.2f}',
+        'currency': 'USD',
+        'quantity': 1,
+    }]
+ 
+    payment = paypalrestsdk.Payment({
+        'intent': 'sale',
+        'payer': {
+            'payment_method': 'paypal',
+        },
+        'redirect_urls': {
+            'return_url': request.build_absolute_uri('/pago/paypal/exitoso/'),
+            'cancel_url': request.build_absolute_uri('/pago/paypal/cancelado/'),
+        },
+        'transactions': [{
+            'item_list': {'items': item_list},
+            'amount': {
+                'total':    f'{total_usd:.2f}',
+                'currency': 'USD',
+            },
+            'description': (
+                f'VetShop — pedido de {request.user.username} '
+                f'(${carrito.total():,} CLP)'   # referencia en CLP en la descripción
+            ),
+        }],
+    })
+ 
+    if payment.create():
+        request.session['paypal_payment_id'] = payment.id
+
+        for link in payment.links:
+            if link.rel == 'approval_url':
+                # En vez de redirect directo, devolvemos la URL al JS
+                return JsonResponse({'redirect_url': str(link.href)})
+    else:
+        print("ERROR PAYPAL:", payment.error)
+        return JsonResponse({'error': str(payment.error)}, status=400)
+ 
+ 
+# ════════════════════════════════════
+#   PAGO CON PAYPAL — Retorno exitoso
+# ════════════════════════════════════
+@login_required
+def pago_paypal_exitoso(request):
+    """
+    PayPal redirige aquí tras la aprobación del usuario.
+    Ejecuta el pago, crea la Venta y vacía el carrito.
+    """
+    payment_id = request.GET.get('paymentId') or request.session.get('paypal_payment_id')
+    payer_id   = request.GET.get('PayerID')
+ 
+    if not payment_id or not payer_id:
+        messages.error(request, 'No se pudo verificar el pago. Contacta soporte.')
+        return redirect('checkout')
+ 
+    payment = paypalrestsdk.Payment.find(payment_id)
+ 
+    if payment.execute({'payer_id': payer_id}):
+        # Pago aprobado — registrar en BD de forma atómica
+        try:
+            with transaction.atomic():
+                venta = _crear_venta(request.user, estado='pagado')
+ 
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect('checkout')
+ 
+        # Limpiar sesión
+        request.session.pop('paypal_payment_id', None)
+ 
+        messages.success(request, '¡Pago realizado con éxito! 🎉')
+        return render(request, 'html/pago_exitoso.html', {'venta': venta})
+    else:
+        messages.error(request, 'El pago no pudo completarse. Intenta de nuevo.')
+        return redirect('checkout')
+ 
+ 
+# ════════════════════════════════════
+#   PAGO CON PAYPAL — Cancelado
+# ════════════════════════════════════
+@login_required
+def pago_paypal_cancelado(request):
+    """
+    PayPal redirige aquí si el usuario cancela el pago.
+    El carrito se mantiene intacto.
+    """
+    request.session.pop('paypal_payment_id', None)
+    messages.warning(request, 'Cancelaste el pago. Tu carrito sigue guardado.')
+    return redirect('checkout')
+ 
+ 
+# ════════════════════════════════════
+#   PAGO POR TRANSFERENCIA
+# ════════════════════════════════════
+@login_required
+def pago_transferencia(request):
+    """
+    Registra el pedido con estado 'pendiente'.
+    El carrito se vacía y se espera confirmación manual del pago.
+    """
+    if request.method != 'POST':
+        return redirect('checkout')
+ 
+    try:
+        with transaction.atomic():
+            venta = _crear_venta(request.user, estado='pendiente')
+ 
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('checkout')
+ 
+    messages.success(
+        request,
+        'Pedido registrado. En cuanto confirmemos tu transferencia, lo procesamos. 🐾'
+    )
+    return render(request, 'html/pago_exitoso.html', {'venta': venta})
+ 
+ 
+# ════════════════════════════════════
+#   HELPER — Crear Venta (uso interno)
+# ════════════════════════════════════
+def _crear_venta(user, estado):
+    """
+    Función interna compartida entre PayPal y Transferencia.
+    - Valida stock en el momento del pago
+    - Crea Venta + DetalleVenta
+    - Descuenta stock de cada Producto
+    - Vacía el carrito del usuario
+    Lanza ValueError si hay problema de stock.
+    """
+    carrito = user.carrito
+    items   = carrito.items.select_related('producto').all()
+ 
+    if not items.exists():
+        raise ValueError('El carrito está vacío.')
+ 
+    # Validar stock antes de procesar
+    for item in items:
+        producto = Producto.objects.select_for_update().get(pk=item.producto.pk)
+        if producto.stock < item.cantidad:
+            raise ValueError(
+                f'Stock insuficiente para "{producto.nombre}". '
+                f'Solo quedan {producto.stock} unidades.'
+            )
+ 
+    # Crear la venta
+    venta = Venta.objects.create(
+        cliente = user,
+        total   = carrito.total(),
+        estado  = estado,
+    )
+ 
+    # Crear detalles y descontar stock
+    for item in items:
+        producto = Producto.objects.select_for_update().get(pk=item.producto.pk)
+ 
+        DetalleVenta.objects.create(
+            venta           = venta,
+            producto        = producto,
+            cantidad        = item.cantidad,
+            precio_unitario = producto.precio,
+        )
+ 
+        producto.stock -= item.cantidad
+        producto.save()
+ 
+    # Vaciar el carrito
+    items.delete()
+ 
+    return venta

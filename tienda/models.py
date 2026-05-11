@@ -41,15 +41,18 @@ class Cliente(AbstractUser):
         return self.username
 
 class Venta(models.Model):
-    cliente = models.ForeignKey(
-        settings.AUTH_USER_MODEL,  
-        on_delete=models.CASCADE
-    )
-    fecha = models.DateTimeField(auto_now_add=True)
-    total = models.IntegerField()
-
-    def __str__(self):
-        return f"Venta {self.id} - {self.cliente.username}"
+    ESTADO_CHOICES = [
+        ('pendiente',  'Pendiente de pago'),
+        ('pagado',     'Pagado'),
+        ('fallido',    'Fallido'),
+        ('cancelado',  'Cancelado'),
+    ]
+    cliente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    fecha   = models.DateTimeField(auto_now_add=True)
+    total   = models.IntegerField()
+    estado  = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    
+    def __str__(self): return f"Venta {self.id} - {self.cliente.username} [{self.estado}]"
 
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
