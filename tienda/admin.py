@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Categoria, Producto, Cliente, Venta, DetalleVenta
+from .models import Categoria, Producto, Cliente, Venta, DetalleVenta, Vendedor, Transportador
 
 # Esto permite editar el DetalleVenta dentro de la misma vista de la Venta
 class DetalleVentaInline(admin.TabularInline):
@@ -15,7 +15,15 @@ class ProductoAdmin(admin.ModelAdmin):
     list_filter = ('categoria',) # Filtro por categoría a la derecha
     search_fields = ('nombre',) # Buscador por nombre
 
+class VendedorAdmin(admin.ModelAdmin):
+    list_display = ['cliente', 'activo']
+
+class TransportadorAdmin(admin.ModelAdmin):
+    list_display = ['cliente', 'activo', 'vehiculo']
+
 admin.site.register(Categoria)
 admin.site.register(Producto, ProductoAdmin) # Usamos ProductoAdmin para personalizar
 admin.site.register(Cliente)
 admin.site.register(Venta, VentaAdmin) # Usamos VentaAdmin para personalizar
+admin.site.register(Vendedor)
+admin.site.register(Transportador)

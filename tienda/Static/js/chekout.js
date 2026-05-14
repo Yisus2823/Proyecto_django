@@ -131,3 +131,46 @@ document.getElementById('btn-paypal').addEventListener('click', async function (
         btn.querySelector('.btn-pagar-text').textContent = 'Pagar con PayPal';
     }
 });
+
+
+
+/* ════════════════════════════════════
+   MERCADO PAGO — fetch + redirect
+════════════════════════════════════ */
+document.getElementById('btn-mercadopago')?.addEventListener('click', async function () {
+    const btn = this;
+    btn.disabled = true;
+    btn.querySelector('.btn-pagar-text').textContent = 'Conectando con Mercado Pago...';
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    try {
+        const res = await fetch('/pago/mercadopago/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        });
+
+        const contentType = res.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+            throw new Error(`Respuesta inesperada (${res.status})`);
+        }
+
+        const data = await res.json();
+
+        if (data.redirect_url) {
+            window.location.href = data.redirect_url;
+        } else {
+            alert('Error Mercado Pago: ' + (data.error || 'intenta de nuevo'));
+            btn.disabled = false;
+            btn.querySelector('.btn-pagar-text').textContent = 'Pagar con Mercado Pago';
+        }
+    } catch (err) {
+        alert('Error de red: ' + err.message);
+        btn.disabled = false;
+        btn.querySelector('.btn-pagar-text').textContent = 'Pagar con Mercado Pago';
+    }
+});

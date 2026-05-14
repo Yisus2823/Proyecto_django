@@ -9,6 +9,8 @@ cryptography==46.0.5
 distro==1.9.0
 dj-database-url==3.1.2
 Django==6.0.3
+djangorestframework==3.17.1
+djangorestframework_simplejwt==5.5.1
 docstring_parser==0.18.0
 google-api-core==2.30.3
 google-auth==2.49.1
@@ -28,7 +30,9 @@ h11==0.16.0
 httpcore==1.0.9
 httpx==0.28.1
 idna==3.11
+mercadopago==2.4.0
 packaging==26.2
+paypalrestsdk==1.13.3
 pillow==12.1.1
 proto-plus==1.27.2
 protobuf==6.33.6
@@ -38,6 +42,8 @@ pyasn1_modules==0.4.2
 pycparser==3.0
 pydantic==2.12.5
 pydantic_core==2.41.5
+PyJWT==2.12.1
+pyOpenSSL==26.2.0
 python-dateutil==2.9.0.post0
 python-decouple==3.8
 requests==2.32.5
@@ -51,8 +57,6 @@ tzdata==2025.3
 tzlocal==5.3.1
 urllib3==2.6.3
 websockets==16.0
-
-
 
 ##.\venv\Scripts\activate
 ##py -m pip freeze > requirements.txt

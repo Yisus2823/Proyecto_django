@@ -146,11 +146,9 @@
                         <span>Transferencia</span>
                     </button>
 
-                    <button class="metodo-tab metodo-disabled" data-metodo="mercadopago"
-                            role="tab" aria-selected="false" disabled>
+                    <button class="metodo-tab" data-metodo="mercadopago" role="tab" aria-selected="false">
                         <span>💳</span>
                         <span>Mercado Pago</span>
-                        <span class="pronto-badge">Pronto</span>
                     </button>
 
                 </div>
@@ -239,11 +237,22 @@
 
                 <!-- ── Panel Mercado Pago (placeholder) ── -->
                 <div class="metodo-panel" id="panel-mercadopago">
-                    <div class="pronto-placeholder">
-                        <span>🚧</span>
-                        <h3>Mercado Pago — Próximamente</h3>
-                        <p>Estamos integrando esta pasarela. Por ahora usa PayPal o Transferencia.</p>
+                    <p class="metodo-descripcion">
+                        Serás redirigido a Mercado Pago para completar tu compra de forma segura.
+                        Acepta tarjetas de crédito, débito y saldo en cuenta.
+                    </p>
+                    <div class="metodo-features">
+                        <div class="metodo-feature">✅ Tarjetas de crédito y débito</div>
+                        <div class="metodo-feature">✅ Saldo en cuenta Mercado Pago</div>
+                        <div class="metodo-feature">✅ Protección al comprador</div>
                     </div>
+
+                    <button type="button" id="btn-mercadopago" class="btn-pagar btn-mercadopago"
+                            {% if not carrito_items %}disabled{% endif %}>
+                        <span>💳</span>
+                        <span class="btn-pagar-text">Pagar con Mercado Pago</span>
+                        <span class="btn-pagar-total">${{ carrito.total|floatformat:0 }}</span>
+                    </button>
                 </div>
 
             </div>

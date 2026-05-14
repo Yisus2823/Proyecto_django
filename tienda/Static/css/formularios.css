@@ -615,6 +615,17 @@ body {
 .pronto-placeholder span  { font-size: 3rem; }
 .pronto-placeholder h3    { font-family: 'Fredoka One', cursive; font-size: 1.3rem; color: white; }
 .pronto-placeholder p     { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; max-width: 280px; }
+
+
+.btn-mercadopago {
+    background: linear-gradient(135deg, #009ee3 0%, #007eb5 100%);
+    color: white;
+    box-shadow: 0 8px 24px rgba(0,158,227,0.35);
+}
+.btn-mercadopago:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 36px rgba(0,158,227,0.50);
+}
  
 
 

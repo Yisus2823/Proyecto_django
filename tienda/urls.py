@@ -16,4 +16,8 @@ urlpatterns = [
     path('pago/paypal/exitoso/',        views.pago_paypal_exitoso,   name='pago_paypal_exitoso'),
     path('pago/paypal/cancelado/',      views.pago_paypal_cancelado, name='pago_paypal_cancelado'),
     path('pago/transferencia/',         views.pago_transferencia,    name='pago_transferencia'),
+    path('pago/mercadopago/',           views.pago_mercadopago,          name='pago_mercadopago'),
+    path('pago/mercadopago/exitoso/',   views.pago_mercadopago_exitoso,  name='pago_mercadopago_exitoso'),
+    path('pago/mercadopago/fallido/',   views.pago_mercadopago_fallido,  name='pago_mercadopago_fallido'),
+    path('pago/mercadopago/pendiente/', views.pago_mercadopago_pendiente,name='pago_mercadopago_pendiente'),
 ]

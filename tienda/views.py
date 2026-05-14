@@ -15,6 +15,7 @@ import paypalrestsdk
 import json
 import re
 import requests as http_requests
+import mercadopago
 
 
 #-Configguracion ia
@@ -495,38 +496,148 @@ def _crear_venta(user, estado):
  
     if not items.exists():
         raise ValueError('El carrito está vacío.')
- 
-    # Validar stock antes de procesar
-    for item in items:
-        producto = Producto.objects.select_for_update().get(pk=item.producto.pk)
-        if producto.stock < item.cantidad:
-            raise ValueError(
-                f'Stock insuficiente para "{producto.nombre}". '
-                f'Solo quedan {producto.stock} unidades.'
-            )
- 
-    # Crear la venta
+    
+    # Solo validar y descontar stock si el pago es inmediato
+    descontar_stock = estado == 'pagado'
+
+    if descontar_stock:
+        for item in items:
+            producto = Producto.objects.select_for_update().get(pk=item.producto.pk)
+            if producto.stock < item.cantidad:
+                raise ValueError(
+                    f'Stock insuficiente para "{producto.nombre}". '
+                    f'Solo quedan {producto.stock} unidades.'
+                )
+
     venta = Venta.objects.create(
         cliente = user,
         total   = carrito.total(),
         estado  = estado,
     )
  
+
+ 
     # Crear detalles y descontar stock
     for item in items:
         producto = Producto.objects.select_for_update().get(pk=item.producto.pk)
- 
+
         DetalleVenta.objects.create(
             venta           = venta,
             producto        = producto,
             cantidad        = item.cantidad,
             precio_unitario = producto.precio,
         )
- 
-        producto.stock -= item.cantidad
-        producto.save()
+
+        # Solo descontar si es pago inmediato (PayPal/MP)
+        if descontar_stock:
+            producto.stock -= item.cantidad
+            producto.save()
  
     # Vaciar el carrito
     items.delete()
- 
     return venta
+
+
+
+# ════════════════════════════════════
+#   PAGO CON MERCADO PAGO — Iniciar
+# ════════════════════════════════════
+@login_required
+def pago_mercadopago(request):
+    if request.method != 'POST':
+        return redirect('checkout')
+
+    try:
+        carrito = request.user.carrito
+        items   = carrito.items.select_related('producto').all()
+    except Carrito.DoesNotExist:
+        return redirect('checkout')
+
+    if not items.exists():
+        return redirect('checkout')
+
+    sdk = mercadopago.SDK(config('MERCADOPAGO_ACCESS_TOKEN'))
+
+    # Construir ítems — Mercado Pago acepta CLP directamente 🎉
+    item_list = [{
+        'title':       item.producto.nombre,
+        'quantity':    item.cantidad,
+        'unit_price':  float(item.producto.precio),   # CLP sin conversión
+        'currency_id': 'CLP',
+    } for item in items]
+
+    preference_data = {
+        'items': item_list,
+        'payer': {
+            'email': request.user.email or 'comprador@vetshop.cl',
+        },
+        'back_urls': {
+            'success': 'http://127.0.0.1:8000/pago/mercadopago/exitoso/',
+            'failure': 'http://127.0.0.1:8000/pago/mercadopago/fallido/',
+            'pending': 'http://127.0.0.1:8000/pago/mercadopago/pendiente/',
+        },
+        # 'auto_return': 'approved',
+        'external_reference': str(request.user.id),
+        'statement_descriptor': 'VetShop',
+    }
+
+    preference_response = sdk.preference().create(preference_data)
+    preference = preference_response['response']
+    #print(">>> RESPUESTA COMPLETA MP:", preference_response)
+
+    if 'id' in preference:
+        request.session['mp_preference_id'] = preference['id']
+        # En producción usar preference['init_point']
+        # En sandbox usar preference['sandbox_init_point']
+        init_point = preference.get('sandbox_init_point') or preference.get('init_point')
+        return JsonResponse({'redirect_url': init_point})
+    else:
+        print(">>> ERROR MERCADO PAGO:", preference)
+        return JsonResponse({'error': 'No se pudo crear la preferencia'}, status=400)
+
+
+# ════════════════════════════════════
+#   MERCADO PAGO — Retorno exitoso
+# ════════════════════════════════════
+@login_required
+def pago_mercadopago_exitoso(request):
+    payment_id = request.GET.get('payment_id')
+    status     = request.GET.get('status')
+
+    if status != 'approved':
+        messages.warning(request, 'El pago no fue aprobado.')
+        return redirect('checkout')
+
+    try:
+        with transaction.atomic():
+            venta = _crear_venta(request.user, estado='pagado')
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('checkout')
+
+    request.session.pop('mp_preference_id', None)
+    return render(request, 'html/pago_exitoso.html', {'venta': venta})
+
+
+# ════════════════════════════════════
+#   MERCADO PAGO — Pago fallido
+# ════════════════════════════════════
+@login_required
+def pago_mercadopago_fallido(request):
+    messages.error(request, 'El pago fue rechazado. Intenta con otro método.')
+    return redirect('checkout')
+
+
+# ════════════════════════════════════
+#   MERCADO PAGO — Pago pendiente
+# ════════════════════════════════════
+@login_required
+def pago_mercadopago_pendiente(request):
+    try:
+        with transaction.atomic():
+            venta = _crear_venta(request.user, estado='pendiente')
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('checkout')
+
+    return render(request, 'html/pago_exitoso.html', {'venta': venta})

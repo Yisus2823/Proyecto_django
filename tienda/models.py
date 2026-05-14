@@ -39,20 +39,53 @@ class Cliente(AbstractUser):
 
     def __str__(self):
         return self.username
+    
+
+class Vendedor(models.Model):
+    cliente = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='vendedor'
+    )
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Vendedor: {self.cliente.username}"
+
+
+class Transportador(models.Model):
+    cliente = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='transportador'
+    )
+    activo     = models.BooleanField(default=True)
+    vehiculo   = models.CharField(max_length=100, blank=True)
+
+    def __str__(self):
+        return f"Transportador: {self.cliente.username}"
 
 class Venta(models.Model):
     ESTADO_CHOICES = [
-        ('pendiente',  'Pendiente de pago'),
-        ('pagado',     'Pagado'),
-        ('fallido',    'Fallido'),
-        ('cancelado',  'Cancelado'),
+        ('pendiente',    'Pendiente de pago'),
+        ('aprobado',     'Aprobado'),          
+        ('pagado',       'Pagado'),             
+        ('en_despacho',  'En despacho'),        
+        ('entregado',    'Entregado'),
+        ('fallido',      'Fallido'),
+        ('cancelado',    'Cancelado'),
     ]
-    cliente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    fecha   = models.DateTimeField(auto_now_add=True)
-    total   = models.IntegerField()
-    estado  = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
-    
-    def __str__(self): return f"Venta {self.id} - {self.cliente.username} [{self.estado}]"
+    cliente      = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    fecha        = models.DateTimeField(auto_now_add=True)
+    total        = models.IntegerField()
+    estado       = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    vendedor     = models.ForeignKey(Vendedor, null=True, blank=True, on_delete=models.SET_NULL)
+    transportador= models.ForeignKey(Transportador, null=True, blank=True, on_delete=models.SET_NULL)
+    fecha_despacho = models.DateTimeField(null=True, blank=True)
+    fecha_entrega  = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Venta #{self.id} — {self.cliente.username} [{self.estado}]"
 
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE)

@@ -11,5 +11,6 @@ urlpatterns = [
         template_name='html/login.html'
     ), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('api/', include('tienda.api.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
