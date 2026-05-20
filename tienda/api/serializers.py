@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from tienda.models import Venta, DetalleVenta, Producto, Cliente
 
 class ProductoSerializer(serializers.ModelSerializer):
@@ -24,3 +25,15 @@ class VentaSerializer(serializers.ModelSerializer):
             'estado', 'detalles',
             'fecha_despacho', 'fecha_entrega',
         ]
+
+def get_rol(user):
+    if hasattr(user, 'vendedor'):        return 'vendedor'
+    elif hasattr(user, 'transportador'): return 'transportador'
+    return 'cliente'
+
+class CustomTokenSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data['rol']      = get_rol(self.user)
+        data['username'] = self.user.username
+        return data

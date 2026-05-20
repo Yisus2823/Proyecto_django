@@ -63,3 +63,6 @@ websockets==16.0
 ##py -m pip list
 ##pip install -r requirements.txt
 ##py manage.py runserver
+##192.168.0.106
+##python manage.py runserver 0.0.0.0:8000
+##http://192.168.0.106:8000 -> Aqui se abre la app de django ahora 
